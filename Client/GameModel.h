@@ -10,14 +10,14 @@ enum GameType
     PERSON_NET
 };
 
-// ÓÎÏ·×´Ì¬
+// æ¸¸æˆçŠ¶æ€
 enum GameStatus
 {
     PLAYING,
-    WIN,//´Ë´¦WINÖ¸ÓĞÊ¤ÀûÒ»·½
-    DEAD//´Ë´¦DEADÖ¸ËÀ¾Ö
+    WIN,//æ­¤å¤„WINæŒ‡æœ‰èƒœåˆ©ä¸€æ–¹
+    DEAD//æ­¤å¤„DEADæŒ‡æ­»å±€
 };
-const int kBoardSizeNum = 18;//ÆåÅÌ³ß´çÎª19*19
+const int kBoardSizeNum = 18;//æ£‹ç›˜å°ºå¯¸ä¸º19*19
 
 class GameModel
 {
@@ -25,19 +25,21 @@ public:
     GameModel();
 
 public:
-    std::vector<std::vector<int>> gameMapVec; // ´æ´¢µ±Ç°ÓÎÏ·ÆåÅÌºÍÆå×ÓµÄÇé¿ö,¿Õ°×Îª0£¬°××Ó1£¬ºÚ×Ó-1
-    std::vector<std::vector<int>> scoreMapVec; // ´æ´¢¸÷¸öµãÎ»µÄÆÀ·ÖÇé¿ö£¬×÷ÎªAIÏÂÆåÒÀ¾İ
-    bool playerFlag; // ±êÊ¾ÏÂÆå·½/ÏÈºóÊÖ
-    GameType gameType; // ÓÎÏ·Ä£Ê½
-    GameStatus gameStatus; // ÓÎÏ·×´Ì¬
+    std::vector<std::vector<int>> gameMapVec; // å­˜å‚¨å½“å‰æ¸¸æˆæ£‹ç›˜å’Œæ£‹å­çš„æƒ…å†µ,ç©ºç™½ä¸º0ï¼Œç™½å­1ï¼Œé»‘å­-1
+    std::vector<std::vector<int>> scoreMapVec; // å­˜å‚¨å„ä¸ªç‚¹ä½çš„è¯„åˆ†æƒ…å†µï¼Œä½œä¸ºAIä¸‹æ£‹ä¾æ®
+    bool playerFlag; // æ ‡ç¤ºä¸‹æ£‹æ–¹/å…ˆåæ‰‹
+    bool isHost;//æ ¹æ®è°æ˜¯æˆ¿é—´çš„hostå†³å®šå…ˆåæ‰‹
+    GameType gameType; // æ¸¸æˆæ¨¡å¼
+    GameStatus gameStatus; // æ¸¸æˆçŠ¶æ€
 
-    void startGame(GameType type); // ¿ªÊ¼ÓÎÏ·
-    void calculateScore(); // ¼ÆËãÆÀ·Ö
-    void actionByPerson(int row, int col); // ÈËÖ´ĞĞÏÂÆå
-    void actionByAI(int& clickRow, int& clickCol); // »úÆ÷Ö´ĞĞÏÂÆå
-    void updateGameMap(int row, int col); // Ã¿´ÎÂä×Óºó¸üĞÂÓÎÏ·ÆåÅÌ
-    bool isWin(int row, int col); // ÅĞ¶ÏÓÎÏ·ÊÇ·ñÊ¤Àû
-    bool isDeadGame(); // ÅĞ¶ÏÊÇ·ñºÍÆå
+    void startGame(GameType type); // å¼€å§‹æ¸¸æˆ
+    void calculateScore(); // è®¡ç®—è¯„åˆ†
+    void actionByPerson(int row, int col); // äººæ‰§è¡Œä¸‹æ£‹
+    void actionByAI(int& clickRow, int& clickCol); // æœºå™¨æ‰§è¡Œä¸‹æ£‹
+    void actionUndo(int row,int col);
+    void updateGameMap(int row, int col); // æ¯æ¬¡è½å­åæ›´æ–°æ¸¸æˆæ£‹ç›˜
+    bool isWin(int row, int col); // åˆ¤æ–­æ¸¸æˆæ˜¯å¦èƒœåˆ©
+    bool isDeadGame(); // åˆ¤æ–­æ˜¯å¦å’Œæ£‹
 };
 
 #endif // GAMEMODEL_H#pragma once

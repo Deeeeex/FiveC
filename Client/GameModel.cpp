@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "GameModel.h"
+#include "mainwindow.h"
 
 GameModel::GameModel()
 {
@@ -11,7 +12,7 @@ GameModel::GameModel()
 void GameModel::startGame(GameType type)
 {
     gameType = type;
-    // ³õÊ¼ÆåÅÌ
+    // åˆå§‹æ£‹ç›˜
     gameMapVec.clear();
     for (int i = 0; i <= kBoardSizeNum; i++)
     {
@@ -21,7 +22,7 @@ void GameModel::startGame(GameType type)
         gameMapVec.push_back(lineBoard);
     }
 
-    // Èç¹ûÊÇAIÄ£Ê½£¬ĞèÒª³õÊ¼»¯ÆÀ·ÖÊı×é
+    // å¦‚æœæ˜¯AIæ¨¡å¼ï¼Œéœ€è¦åˆå§‹åŒ–è¯„åˆ†æ•°ç»„
     if (gameType == BOT)
     {
         scoreMapVec.clear();
@@ -34,14 +35,14 @@ void GameModel::startGame(GameType type)
         }
     }
 
-    // ¼º·½ÏÂÎªtrue,¶Ô·½ÏÂÎªfalse
-    playerFlag = true;//Õâ¸öµØ·½ĞèÒªÅĞ¶ÏË­ÊÇÏÈÊÖ
-    //Î±ÂëÈçÏÂ
-    /*
-    if(isHost) playerFlag=true;
-    else playerFlag=false;
-    */
-
+    // è”æœºäººäººéœ€è¦åˆ¤æ–­å…ˆåæ‰‹
+    if (gameType==PERSON_NET)
+    {
+        if (isHost) playerFlag = true;
+        else playerFlag = false;
+    }
+    else
+        playerFlag = true;
 }
 
 void GameModel::updateGameMap(int row, int col)
@@ -51,68 +52,65 @@ void GameModel::updateGameMap(int row, int col)
     else
         gameMapVec[row][col] = -1;
 
-    // »»ÊÖ
+    // æ¢æ‰‹
     playerFlag = !playerFlag;
 }
 
 void GameModel::actionByPerson(int row, int col)
 {
     updateGameMap(row, col);
-    //ÔÚÕâÀïÊµÏÖrowºÍcolµÄ´«Êä
-    //Î±ÂëÃèÊöÈçÏÂ
-    /*
-    if (playerFlag)
-    {
-        ·¢ËÍº¯Êı(row,col);//ĞèÒª´ïµ½µÄÄ¿±ê£º·¢ËÍÎ»ÖÃÒÔºóserver×ª·¢£¬ÁíÒ»¶ËÊÕµ½ĞÅÏ¢£¬¸üĞÂÆåÅÌ£¨updateGameMapº¯ÊıÖĞ°üº¬ÁË»»ÊÖµÄÖ´ĞĞ²Ù×÷£©
-    }
-    */
+}
+
+void GameModel::actionUndo(int row, int col)
+{
+    gameMapVec[row][col]=0;
 }
 
 void GameModel::actionByAI(int& clickRow, int& clickCol)
 {
-    // ¼ÆËãÆÀ·Ö
+    // è®¡ç®—è¯„åˆ†
     calculateScore();
 
-    // ´ÓÆÀ·ÖÖĞÕÒ³ö×î´ó·ÖÊıµÄÎ»ÖÃ
+    // ä»è¯„åˆ†ä¸­æ‰¾å‡ºæœ€å¤§åˆ†æ•°çš„ä½ç½®
     int maxScore = 0;
     std::vector<std::pair<int, int>> maxPoints;
 
     for (int row = 0; row <= kBoardSizeNum; row++)
         for (int col = 0; col <= kBoardSizeNum; col++)
         {
-            // Ç°ÌáÊÇÕâ¸ö×ø±êÊÇ¿ÕµÄ
+            // å‰ææ˜¯è¿™ä¸ªåæ ‡æ˜¯ç©ºçš„
             if (gameMapVec[row][col] == 0)
             {
-                if (scoreMapVec[row][col] > maxScore)          // ÕÒ×î´óµÄÊıºÍ×ø±ê
+                if (scoreMapVec[row][col] > maxScore)          // æ‰¾æœ€å¤§çš„æ•°å’Œåæ ‡
                 {
                     maxPoints.clear();
                     maxScore = scoreMapVec[row][col];
                     maxPoints.push_back(std::make_pair(row, col));
                 }
-                else if (scoreMapVec[row][col] == maxScore)     // Èç¹ûÓĞ¶à¸ö×î´óµÄÊı£¬¶¼´æÆğÀ´
+                else if (scoreMapVec[row][col] == maxScore)     // å¦‚æœæœ‰å¤šä¸ªæœ€å¤§çš„æ•°ï¼Œéƒ½å­˜èµ·æ¥
                     maxPoints.push_back(std::make_pair(row, col));
             }
         }
 
-    // Ëæ»úÂä×Ó£¬Èç¹ûÓĞ¶à¸öµãµÄ»°
+    // éšæœºè½å­ï¼Œå¦‚æœæœ‰å¤šä¸ªç‚¹çš„è¯
     srand((unsigned)time(0));
     int index = rand() % maxPoints.size();
 
     std::pair<int, int> pointPair = maxPoints.at(index);
-    clickRow = pointPair.first; // ¼ÇÂ¼Âä×Óµã
+    clickRow = pointPair.first; // è®°å½•è½å­ç‚¹
     clickCol = pointPair.second;
     updateGameMap(clickRow, clickCol);
 }
 
-// ×î¹Ø¼üµÄ¼ÆËãÆÀ·Öº¯Êı
+// æœ€å…³é”®çš„è®¡ç®—è¯„åˆ†å‡½æ•°
 void GameModel::calculateScore()
 {
-    // Í³¼ÆÍæ¼Ò»òÕßµçÄÔÁ¬³ÉµÄ×Ó
-    int personNum = 0; // Íæ¼ÒÁ¬³É×ÓµÄ¸öÊı
-    int botNum = 0; // AIÁ¬³É×ÓµÄ¸öÊı
-    int emptyNum = 0; // ¸÷·½Ïò¿Õ°×Î»µÄ¸öÊı
+    // ç»Ÿè®¡ç©å®¶æˆ–è€…ç”µè„‘è¿æˆçš„å­
+    int personNum = 0; // ç©å®¶è¿æˆå­çš„ä¸ªæ•°
+    int botNum = 0; // AIè¿æˆå­çš„ä¸ªæ•°
+    int emptyNum = 0; // å„æ–¹å‘ç©ºç™½ä½çš„ä¸ªæ•°
 
-    // Çå¿ÕÆÀ·ÖÊı×é
+    // æ¸…ç©ºè¯„åˆ†æ•°ç»„
     scoreMapVec.clear();
     for (int i = 0; i <= kBoardSizeNum; i++)
     {
@@ -122,45 +120,45 @@ void GameModel::calculateScore()
         scoreMapVec.push_back(lineScores);
     }
 
-    // ¼Æ·Ö£¨´Ë´¦ÊÇÍêÈ«±éÀú£¬ÆäÊµ¿ÉÒÔÓÃbfs»òÕßdfs¼Ó¼õÖ¦½µµÍ¸´ÔÓ¶È£¬Í¨¹ıµ÷ÕûÈ¨ÖØÖµ£¬µ÷ÕûAIÖÇÄÜ³Ì¶ÈÒÔ¼°¹¥ÊØ·ç¸ñ£©
+    // è®¡åˆ†ï¼ˆæ­¤å¤„æ˜¯å®Œå…¨éå†ï¼Œå…¶å®å¯ä»¥ç”¨bfsæˆ–è€…dfsåŠ å‡æé™ä½å¤æ‚åº¦ï¼Œé€šè¿‡è°ƒæ•´æƒé‡å€¼ï¼Œè°ƒæ•´AIæ™ºèƒ½ç¨‹åº¦ä»¥åŠæ”»å®ˆé£æ ¼ï¼‰
     for (int row = 0; row <= kBoardSizeNum; row++)
         for (int col = 0; col <= kBoardSizeNum; col++)
         {
-            // ¿Õ°×µã¾ÍËã
+            // ç©ºç™½ç‚¹å°±ç®—
             if (row >= 0 && col >= 0 &&
                 gameMapVec[row][col] == 0)
             {
-                // ±éÀúÖÜÎ§°Ë¸ö·½Ïò
+                // éå†å‘¨å›´å…«ä¸ªæ–¹å‘
                 for (int y = -1; y <= 1; y++)
                     for (int x = -1; x <= 1; x++)
                     {
-                        // ÖØÖÃ
+                        // é‡ç½®
                         personNum = 0;
                         botNum = 0;
                         emptyNum = 0;
 
-                        // Ô­×ø±ê²»Ëã
+                        // åŸåæ ‡ä¸ç®—
                         if (!(y == 0 && x == 0))
                         {
-                            // Ã¿¸ö·½ÏòÑÓÉì4¸ö×Ó
+                            // æ¯ä¸ªæ–¹å‘å»¶ä¼¸4ä¸ªå­
 
-                            // ¶ÔÍæ¼Ò°××ÓÆÀ·Ö£¨Õı·´Á½¸ö·½Ïò£©
+                            // å¯¹ç©å®¶ç™½å­è¯„åˆ†ï¼ˆæ­£åä¸¤ä¸ªæ–¹å‘ï¼‰
                             for (int i = 1; i <= 4; i++)
                             {
                                 if (row + i * y > 0 && row + i * y <= kBoardSizeNum &&
                                     col + i * x > 0 && col + i * x <= kBoardSizeNum &&
-                                    gameMapVec[row + i * y][col + i * x] == 1) // Íæ¼ÒµÄ×Ó
+                                    gameMapVec[row + i * y][col + i * x] == 1) // ç©å®¶çš„å­
                                 {
                                     personNum++;
                                 }
                                 else if (row + i * y > 0 && row + i * y <= kBoardSizeNum &&
                                     col + i * x > 0 && col + i * x <= kBoardSizeNum &&
-                                    gameMapVec[row + i * y][col + i * x] == 0) // ¿Õ°×Î»
+                                    gameMapVec[row + i * y][col + i * x] == 0) // ç©ºç™½ä½
                                 {
                                     emptyNum++;
                                     break;
                                 }
-                                else            // ³ö±ß½ç
+                                else            // å‡ºè¾¹ç•Œ
                                     break;
                             }
 
@@ -168,61 +166,61 @@ void GameModel::calculateScore()
                             {
                                 if (row - i * y > 0 && row - i * y <= kBoardSizeNum &&
                                     col - i * x > 0 && col - i * x <= kBoardSizeNum &&
-                                    gameMapVec[row - i * y][col - i * x] == 1) // Íæ¼ÒµÄ×Ó
+                                    gameMapVec[row - i * y][col - i * x] == 1) // ç©å®¶çš„å­
                                 {
                                     personNum++;
                                 }
                                 else if (row - i * y > 0 && row - i * y <= kBoardSizeNum &&
                                     col - i * x > 0 && col - i * x <= kBoardSizeNum &&
-                                    gameMapVec[row - i * y][col - i * x] == 0) // ¿Õ°×Î»
+                                    gameMapVec[row - i * y][col - i * x] == 0) // ç©ºç™½ä½
                                 {
                                     emptyNum++;
                                     break;
                                 }
-                                else            // ³ö±ß½ç
+                                else            // å‡ºè¾¹ç•Œ
                                     break;
                             }
 
-                            if (personNum == 1)                      // É±¶ş
+                            if (personNum == 1)                      // æ€äºŒ
                                 scoreMapVec[row][col] += 10;
-                            else if (personNum == 2)                 // É±Èı
+                            else if (personNum == 2)                 // æ€ä¸‰
                             {
                                 if (emptyNum == 1)
                                     scoreMapVec[row][col] += 30;
                                 else if (emptyNum == 2)
                                     scoreMapVec[row][col] += 40;
                             }
-                            else if (personNum == 3)                 // É±ËÄ
+                            else if (personNum == 3)                 // æ€å››
                             {
-                                // Á¿±ä¿ÕÎ»²»Ò»Ñù£¬ÓÅÏÈ¼¶²»Ò»Ñù
+                                // é‡å˜ç©ºä½ä¸ä¸€æ ·ï¼Œä¼˜å…ˆçº§ä¸ä¸€æ ·
                                 if (emptyNum == 1)
                                     scoreMapVec[row][col] += 60;
                                 else if (emptyNum == 2)
                                     scoreMapVec[row][col] += 110;
                             }
-                            else if (personNum == 4)                 // É±Îå
+                            else if (personNum == 4)                 // æ€äº”
                                 scoreMapVec[row][col] += 10100;
 
-                            // ½øĞĞÒ»´ÎÇå¿Õ
+                            // è¿›è¡Œä¸€æ¬¡æ¸…ç©º
                             emptyNum = 0;
 
-                            // ¶ÔAIºÚ×ÓÆÀ·Ö
+                            // å¯¹AIé»‘å­è¯„åˆ†
                             for (int i = 1; i <= 4; i++)
                             {
                                 if (row + i * y > 0 && row + i * y <= kBoardSizeNum &&
                                     col + i * x > 0 && col + i * x <= kBoardSizeNum &&
-                                    gameMapVec[row + i * y][col + i * x] == 1) // Íæ¼ÒµÄ×Ó
+                                    gameMapVec[row + i * y][col + i * x] == 1) // ç©å®¶çš„å­
                                 {
                                     botNum++;
                                 }
                                 else if (row + i * y > 0 && row + i * y <= kBoardSizeNum &&
                                     col + i * x > 0 && col + i * x <= kBoardSizeNum &&
-                                    gameMapVec[row + i * y][col + i * x] == 0) // ¿Õ°×Î»
+                                    gameMapVec[row + i * y][col + i * x] == 0) // ç©ºç™½ä½
                                 {
                                     emptyNum++;
                                     break;
                                 }
-                                else            // ³ö±ß½ç
+                                else            // å‡ºè¾¹ç•Œ
                                     break;
                             }
 
@@ -230,41 +228,41 @@ void GameModel::calculateScore()
                             {
                                 if (row - i * y > 0 && row - i * y <= kBoardSizeNum &&
                                     col - i * x > 0 && col - i * x <= kBoardSizeNum &&
-                                    gameMapVec[row - i * y][col - i * x] == -1) // AIµÄ×Ó
+                                    gameMapVec[row - i * y][col - i * x] == -1) // AIçš„å­
                                 {
                                     botNum++;
                                 }
                                 else if (row - i * y > 0 && row - i * y <= kBoardSizeNum &&
                                     col - i * x > 0 && col - i * x <= kBoardSizeNum &&
-                                    gameMapVec[row - i * y][col - i * x] == 0) // ¿Õ°×Î»
+                                    gameMapVec[row - i * y][col - i * x] == 0) // ç©ºç™½ä½
                                 {
                                     emptyNum++;
                                     break;
                                 }
-                                else            // ³ö±ß½ç
+                                else            // å‡ºè¾¹ç•Œ
                                     break;
                             }
 
-                            if (botNum == 0)                      // ÆÕÍ¨ÏÂ×Ó
+                            if (botNum == 0)                      // æ™®é€šä¸‹å­
                                 scoreMapVec[row][col] += 5;
-                            else if (botNum == 1)                 // »î¶ş
+                            else if (botNum == 1)                 // æ´»äºŒ
                                 scoreMapVec[row][col] += 10;
                             else if (botNum == 2)
                             {
-                                if (emptyNum == 1)                // ËÀÈı
+                                if (emptyNum == 1)                // æ­»ä¸‰
                                     scoreMapVec[row][col] += 25;
                                 else if (emptyNum == 2)
-                                    scoreMapVec[row][col] += 50;  // »îÈı
+                                    scoreMapVec[row][col] += 50;  // æ´»ä¸‰
                             }
                             else if (botNum == 3)
                             {
-                                if (emptyNum == 1)                // ËÀËÄ
+                                if (emptyNum == 1)                // æ­»å››
                                     scoreMapVec[row][col] += 55;
                                 else if (emptyNum == 2)
-                                    scoreMapVec[row][col] += 100; // »îËÄ
+                                    scoreMapVec[row][col] += 100; // æ´»å››
                             }
                             else if (botNum >= 4)
-                                scoreMapVec[row][col] += 10000;   // »îÎå
+                                scoreMapVec[row][col] += 10000;   // æ´»äº”
 
                         }
                     }
@@ -275,11 +273,11 @@ void GameModel::calculateScore()
 
 bool GameModel::isWin(int row, int col)
 {
-    // ºáÊúĞ±ËÄÖÖ´óÇé¿ö£¬Ã¿ÖÖÇé¿ö¶¼¸ù¾İµ±Ç°Âä×ÓÍùºó±éÀú5¸öÆå×Ó£¬ÓĞÒ»ÖÖ·ûºÏ¾ÍËãÓ®
-    // Ë®Æ½·½Ïò
+    // æ¨ªç«–æ–œå››ç§å¤§æƒ…å†µï¼Œæ¯ç§æƒ…å†µéƒ½æ ¹æ®å½“å‰è½å­å¾€åéå†5ä¸ªæ£‹å­ï¼Œæœ‰ä¸€ç§ç¬¦åˆå°±ç®—èµ¢
+    // æ°´å¹³æ–¹å‘
     for (int i = 0; i < 5; i++)
     {
-        // Íù×ó5¸ö£¬ÍùÓÒÆ¥Åä4¸ö×Ó£¬20ÖÖÇé¿ö
+        // å¾€å·¦5ä¸ªï¼Œå¾€å³åŒ¹é…4ä¸ªå­ï¼Œ20ç§æƒ…å†µ
         if (col - i > 0 &&
             col - i + 4 <= kBoardSizeNum &&
             gameMapVec[row][col - i] == gameMapVec[row][col - i + 1] &&
@@ -289,7 +287,7 @@ bool GameModel::isWin(int row, int col)
             return true;
     }
 
-    // ÊúÖ±·½Ïò(ÉÏÏÂÑÓÉì4¸ö)
+    // ç«–ç›´æ–¹å‘(ä¸Šä¸‹å»¶ä¼¸4ä¸ª)
     for (int i = 0; i < 5; i++)
     {
         if (row - i > 0 &&
@@ -301,7 +299,7 @@ bool GameModel::isWin(int row, int col)
             return true;
     }
 
-    // ×óĞ±·½Ïò
+    // å·¦æ–œæ–¹å‘
     for (int i = 0; i < 5; i++)
     {
         if (row + i <= kBoardSizeNum &&
@@ -315,7 +313,7 @@ bool GameModel::isWin(int row, int col)
             return true;
     }
 
-    // ÓÒĞ±·½Ïò
+    // å³æ–œæ–¹å‘
     for (int i = 0; i < 5; i++)
     {
         if (row - i > 0 &&
@@ -334,7 +332,7 @@ bool GameModel::isWin(int row, int col)
 
 bool GameModel::isDeadGame()
 {
-    // ËùÓĞ¿Õ¸ñÈ«²¿ÌîÂú
+    // æ‰€æœ‰ç©ºæ ¼å…¨éƒ¨å¡«æ»¡
     for (int i = 0; i <= kBoardSizeNum; i++)
         for (int j = 0; j <= kBoardSizeNum; j++)
         {
