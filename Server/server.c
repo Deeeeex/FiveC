@@ -38,6 +38,7 @@ struct tm *ptm;
 void handler(int signum);
 void Pipe_Handler(int signum);
 void Be_Killed_Handler(int signum);
+void Be_Killed_Handler_Conf(int signum);
 
 int main(void)
 {
@@ -93,7 +94,6 @@ int main(void)
         printf("bind Conf socket error: %s(errno: %d)\n",strerror(errno),errno);
         exit(0);
     }
-
     }
 
     
@@ -115,6 +115,7 @@ int main(void)
         }
         else if(pid[0] == 0)
         {
+            signal(SIGUSR1, Be_Killed_Handler_Conf);
             if( listen(socket_fd_Conf, 10) == -1)
             {
                 printf("listen socket error: %s(errno: %d)\n",strerror(errno),errno);
@@ -136,20 +137,16 @@ int main(void)
                 Game_Status_fd = open("Game_Status", O_RDONLY);
                 read(Game_Status_fd, &Game_Status, sizeof(int));
                 close(Game_Status_fd);
+
                 //send data to Client
-                if(!fork())
-                {
-                    if(send(connect_fd_Conf, &Game_Status, sizeof(int), 0) == -1)
-                        perror("send error");
+                if(send(connect_fd_Conf, &Game_Status, sizeof(int), 0) == -1)
+                    perror("send error");
 
-                    time (&now);
-                    ptm = localtime (&now);
-                    printf("%sGAME_STATUS sent:%d\n\n", asctime(ptm), Game_Status);
+                time (&now);
+                ptm = localtime (&now);
+                printf("%sGAME_STATUS sent:%d\n\n", asctime(ptm), Game_Status);
 
-                    close(connect_fd_Conf);
-                    exit(0);
-                }
-                wait(NULL);
+                close(connect_fd_Conf);
             }
             exit(0);
         }
@@ -337,5 +334,10 @@ void Pipe_Handler(int signum)
 void Be_Killed_Handler(int signum)
 {
     kill(My_Child, SIGKILL);
+    exit(0);
+}
+
+void Be_Killed_Handler_Conf(int signum)
+{
     exit(0);
 }
