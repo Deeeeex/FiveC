@@ -6,22 +6,23 @@
 #include<sys/types.h>
 #include<sys/socket.h>
 #include<netinet/in.h>
-#include<fcntl.h> 
+#include<fcntl.h>
 #include<signal.h>
 #include<sys/wait.h>
+#include<time.h>
 #define HOST_PORT 10888
 #define GUEST_PORT 10889
 #define CONF_PORT 10900
 #define MAXLINE 4096
-#define VACANT 0
-#define WAITING 1
-#define ONGOING 2
+#define VACANT 10
+#define WAITING 11
+#define ONGOING 12
 
-int     socket_fd_Host, connect_fd_Host,
-        socket_fd_Guest, connect_fd_Guest,
+int     socket_fd_Host, connect_fd_Host, 
+        socket_fd_Guest, connect_fd_Guest, 
         socket_fd_Conf, connect_fd_Conf;
 struct sockaddr_in  servaddr_Host, 
-                    servaddr_Guest,
+                    servaddr_Guest, 
                     servaddr_Conf;
 int     buff_H[2], buff_G[2];
 int     n;
@@ -31,6 +32,8 @@ int     fd_1[2];
 int     fd_2[2];
 int     length;
 int     My_Child;
+time_t  now;
+struct tm *ptm;
 
 void handler(int signum);
 void Pipe_Handler(int signum);
@@ -38,11 +41,7 @@ void Be_Killed_Handler(int signum);
 
 int main(void)
 {
-    //Game_Status Initialization
-    Game_Status_fd = open("Game_Status", O_RDWR);
-    write(Game_Status_fd, &Game_Status, sizeof(int));
-    close(Game_Status_fd);
-
+    {
     //Socket Application
     if((socket_fd_Host = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
@@ -95,9 +94,19 @@ int main(void)
         exit(0);
     }
 
+    }
+
+    
     while(1)
     {
-        printf("======waiting for Host's request======\n");
+        //Game_Status Initialization
+        Game_Status_fd = open("Game_Status", O_RDWR);
+        write(Game_Status_fd, &Game_Status, sizeof(int));
+        close(Game_Status_fd);
+
+        time (&now);
+        ptm = localtime (&now);
+        printf("%s======waiting for Host's request======\n", asctime(ptm));
 
         //Here runs the Confirmation child process
         if((pid[0] = fork()) < 0)
@@ -119,6 +128,11 @@ int main(void)
                     printf("accept socket error: %s(errno: %d)",strerror(errno),errno);
                     continue;
                 }
+
+                time (&now);
+                ptm = localtime (&now);
+                printf("%sCONFIRMATION accepted\n\n",asctime(ptm));
+
                 Game_Status_fd = open("Game_Status", O_RDONLY);
                 read(Game_Status_fd, &Game_Status, sizeof(int));
                 close(Game_Status_fd);
@@ -127,9 +141,15 @@ int main(void)
                 {
                     if(send(connect_fd_Conf, &Game_Status, sizeof(int), 0) == -1)
                         perror("send error");
+
+                    time (&now);
+                    ptm = localtime (&now);
+                    printf("%sGAME_STATUS sent:%d\n\n", asctime(ptm), Game_Status);
+
                     close(connect_fd_Conf);
                     exit(0);
                 }
+                wait(NULL);
             }
             exit(0);
         }
@@ -270,15 +290,26 @@ int main(void)
         signal(SIGINT, handler);
         signal(SIGTERM, handler);
 
+        close(*write_H2G);
+        close(*read_G2H);
+        close(*write_G2H);
+        close(*read_H2G);
+        
         int Exit_Pid = wait(NULL);
-        printf("%d\n", Exit_Pid);
+
+        time (&now);
+        ptm = localtime (&now);
+        printf("%s%d Exited\n", asctime(ptm), Exit_Pid);
+
         int i;
         for (i = 0; i < 3; i++)
             kill(pid[i], SIGUSR1);
 
         while((Exit_Pid = wait(NULL)) != -1)
         {
-            printf("%d\n", Exit_Pid);
+            time (&now);
+            ptm = localtime (&now);
+            printf("%s%d Exited\n", asctime(ptm), Exit_Pid);
         }
     }
 
